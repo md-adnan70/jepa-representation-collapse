@@ -26,9 +26,9 @@ AI, and Information Bottleneck Theory.
 | Final `repr_std` | 0.0175 | **0.9749** | **55.5x** |
 | Final prediction loss | 0.383 | 0.464 | higher (expected — see note below) |
 
-![Baseline training curves — loss and repr_std collapsing](<Screenshot 2026-08-26 202441.png>)
+![Baseline training curves — loss and repr_std collapsing](result_graphs/output.png)
 
-![Baseline vs. regularized repr_std and loss comparison](<Screenshot 2026-08-27 081248.png>)
+![Baseline vs. regularized repr_std and loss comparison](<result_graphs/output (5).png>)
 
 **Note on the loss increase:** prediction loss going *up* after regularization
 is expected, not a regression. The baseline was taking a shortcut — predicting
@@ -41,8 +41,10 @@ the regularized model is far better.
 
 ### Effective rank by layer (out of 128 possible)
 
-Baseline: flat ~11–14 across all layers (representations barely use ~9% of
-available capacity, at every depth).
+Baseline: ranges ~3–7 across all layers (representations use only ~2–5% of
+available capacity), with no consistent build-up across depth.
+
+![Effective rank by layer — baseline model](<result_graphs/output (1).png>)
 
 Regularized:
 
@@ -50,7 +52,7 @@ Regularized:
 |---|---|---|---|---|---|---|
 | Effective rank | 14.1 | 39.7 | 62.7 | 69.5 | 83.0 | 115.4 |
 
-![Effective rank by layer — regularized model](<Screenshot 2026-08-27 081304.png>)
+![Effective rank by layer — regularized model](<result_graphs/output (6).png>)
 
 Rank now climbs steadily with depth, reaching 90% of full capacity by the
 final layer — the encoder is building up richer structure layer by layer
@@ -58,21 +60,29 @@ instead of staying flat and collapsed everywhere.
 
 ### Attention entropy by layer
 
+Baseline:
+
+![Attention entropy by layer — baseline model](<result_graphs/output (2).png>)
+
+Regularized:
+
 | Layer | 1 | 2 | 3 | 4 | 5 | 6 |
 |---|---|---|---|---|---|---|
 | Entropy (nats) | 1.29 | 1.32 | 0.59 | **2.00** | 0.34 | 0.26 |
 
-![Attention entropy by layer](<Screenshot 2026-08-27 081314.png>)
+![Attention entropy by layer — regularized model](<result_graphs/output (7).png>)
 
-Non-monotonic, with a sharp spike at layer 4 — notably the same layer where
-linear probe accuracy peaks (see below). Reported as an observation, not a
-firm conclusion; worth investigating further if there's time, but not
-something to force a clean narrative onto.
+Non-monotonic in the regularized model, with a sharp spike at layer 4 —
+notably the same layer where linear probe accuracy peaks (see below).
+Reported as an observation, not a firm conclusion; worth investigating further
+if there's time, but not something to force a clean narrative onto.
 
 ### Linear probe accuracy by layer (frozen target encoder, CIFAR-10)
 
-Baseline: peaked at layer 1 (21.8%) and *decreased* with depth to 17.1% —
+Baseline: peaked at layer 1 (~24.9%) and *decreased* with depth to ~20.4% —
 backwards from what healthy self-supervised encoders typically show.
+
+![Linear probe accuracy by layer — baseline model](<result_graphs/output (3).png>)
 
 Regularized:
 
@@ -80,10 +90,10 @@ Regularized:
 |---|---|---|---|---|---|---|
 | Test accuracy | 35.1% | 36.2% | 37.0% | **38.65%** | 37.3% | 33.0% |
 
-![Linear probe accuracy by layer — regularized model](<Screenshot 2026-08-27 081327.png>)
+![Linear probe accuracy by layer — regularized model](<result_graphs/output (8).png>)
 
 Peak now sits at a middle layer (layer 4) rather than the input layer, and
-best accuracy nearly doubled (21.8% → 38.65%) — consistent with the pattern
+best accuracy improved significantly (24.9% → 38.65%) — consistent with the pattern
 reported in the published I-JEPA/MAE literature, where semantic information
 concentrates mid-to-late rather than at the very first layer.
 
@@ -94,7 +104,13 @@ concentrates mid-to-late rather than at the very first layer.
 | Dead feature fraction | 93.4% | **15.2%** |
 | SAE reconstruction loss | 0.0002 (suspiciously trivial) | 0.099 (genuine reconstruction task) |
 
-![SAE training curve and feature firing frequency histogram](<Screenshot 2026-08-27 081340.png>)
+Baseline SAE — nearly all features dead, two-spike histogram:
+
+![SAE training curve and feature firing frequency histogram — baseline](<result_graphs/output (4).png>)
+
+Regularized SAE — healthy firing distribution:
+
+![SAE training curve and feature firing frequency histogram — regularized](<result_graphs/output (9).png>)
 
 Early vs. late layer comparison (regularized model):
 
@@ -161,13 +177,3 @@ analysis, saves plots.
    are saved to the working directory — download them and drop them in place
    of the placeholders above.
 
-## CV bullet
-
-> Implemented a small I-JEPA on CIFAR-10; diagnosed representation collapse
-> via effective rank (~11/128), 93.4% dead SAE features, and depth-decreasing
-> linear-probe accuracy, despite stop-gradient and EMA teacher updates.
-> Resolved it with a VICReg-style variance/covariance regularizer, yielding a
-> 55.5x increase in representation std, effective rank reaching 115/128 by
-> the final layer, and linear-probe accuracy improving 78% (21.8%→38.65%),
-> with peak information now concentrating at a middle layer rather than the
-> input.
