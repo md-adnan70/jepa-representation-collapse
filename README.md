@@ -2,20 +2,10 @@
 
 A small I-JEPA (Image Joint-Embedding Predictive Architecture) implementation
 trained from scratch, followed by a mechanistic interpretability analysis of
-the learned representations — in the same style as the Qwen3 attention/SAE
-project already on the CV. Includes a diagnosed representation-collapse
+the learned representations. Includes a diagnosed representation-collapse
 failure mode and a VICReg-style regularization fix, with before/after results
 across four independent metrics.
 
-## Why this project (in one line)
-Most "I implemented JEPA" projects stop at training loss going down. This
-goes one step further: it asks what the representations actually look like —
-whether they collapse, where semantic information concentrates by depth, and
-whether they decompose into sparse, interpretable features — directly
-overlapping FUNDIS's listed topics of Representation Learning, Explainable
-AI, and Information Bottleneck Theory.
-
----
 
 ## Results summary
 
@@ -31,12 +21,12 @@ AI, and Information Bottleneck Theory.
 ![Baseline vs. regularized repr_std and loss comparison](<result_graphs/output (5).png>)
 
 **Note on the loss increase:** prediction loss going *up* after regularization
-is expected, not a regression. The baseline was taking a shortcut — predicting
+is expected, not a regression. The baseline was taking a shortcut, predicting
 a near-constant vector — which is trivially easy and produces artificially
 low loss. Once collapse is prevented, the model has to solve the actual
 prediction task, which is harder and reflected honestly in a higher loss.
 `repr_std`, effective rank, probe accuracy, and SAE health are the metrics
-that show whether the representations are actually useful — and by all four,
+that show whether the representations are actually useful, and by all four,
 the regularized model is far better.
 
 ### Effective rank by layer (out of 128 possible)
@@ -72,7 +62,7 @@ Regularized:
 
 ![Attention entropy by layer — regularized model](<result_graphs/output (7).png>)
 
-Non-monotonic in the regularized model, with a sharp spike at layer 4 —
+Non-monotonic in the regularized model, with a sharp spike at layer 4,
 notably the same layer where linear probe accuracy peaks (see below).
 Reported as an observation, not a firm conclusion; worth investigating further
 if there's time, but not something to force a clean narrative onto.
@@ -93,7 +83,7 @@ Regularized:
 ![Linear probe accuracy by layer — regularized model](<result_graphs/output (8).png>)
 
 Peak now sits at a middle layer (layer 4) rather than the input layer, and
-best accuracy improved significantly (24.9% → 38.65%) — consistent with the pattern
+best accuracy improved significantly (24.9% → 38.65%), consistent with the pattern
 reported in the published I-JEPA/MAE literature, where semantic information
 concentrates mid-to-late rather than at the very first layer.
 
@@ -164,16 +154,5 @@ run to produce the results above. Self-contained: writes the module files,
 trains the baseline, trains the VICReg-regularized comparison, runs all
 analysis, saves plots.
 
-## How to reproduce
 
-1. Upload `jepa_interpretability_kaggle.ipynb` to Kaggle (or Colab), GPU
-   runtime (T4 is enough).
-2. Run all cells top to bottom. Baseline training (~20-30 min on a T4),
-   regularized comparison training (another ~20-30 min), analysis (~10-15
-   min, mostly the per-layer linear probes).
-3. All plots (`training_curves.png`, `collapse_fix_comparison.png`,
-   `effective_rank_by_layer.png`, `attention_entropy_by_layer.png`,
-   `linear_probe_acc_by_layer.png`, `sae_analysis.png`) and `results.json`
-   are saved to the working directory — download them and drop them in place
-   of the placeholders above.
 
